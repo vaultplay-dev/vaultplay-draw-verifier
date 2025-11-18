@@ -87,12 +87,9 @@ MIT License - see [LICENSE](LICENSE) for details
 ## 🔗 Links
 
 - **Website:** [vaultplay.co.uk](https://vaultplay.co.uk)
-- **Verification Tool:** [verify.vaultplay.co.uk](https://verify.vaultplay.co.uk) *(or GitHub Pages URL)*
-- **Contact:** [Contact page](https://vaultplay.co.uk/contact)
+- **Verification Tool:** [verify.vaultplay.co.uk](https://verify.vaultplay.co.uk)
+- **Contact:** [Contact page](https://www.vaultplay.co.uk)
 
 ---
 
-**Built with transparency in mind** | Made by [VaultPlay](https://vaultplay.co.uk)
-```
-
----
+**Built with transparency in mind** | Made by [VaultPlay](https://www.vaultplay.co.uk)
