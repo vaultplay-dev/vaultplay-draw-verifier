@@ -1,0 +1,869 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VaultPlay Draw Verifier</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        /* Base styles - Dark theme with VaultPlay branding */
+        :root {
+            --primary-color: #00bfff;
+            --secondary-color: #1e90ff;
+            --success-color: #10b981;
+            --error-color: #ef4444;
+            --bg-dark: #10102d;
+            --bg-darker: #070719;
+            --bg-card: #1e293b;
+            --text-light: #ffffff;
+            --text-muted: color-mix(in srgb, currentColor 60%, transparent);
+            --border-color: color-mix(in srgb, currentColor 60%, transparent);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            line-height: 1.6;
+            color: var(--text-light);
+            background: var(--bg-dark);
+        }
+
+        h1, h2, h3, h4, h5, h6 {
+            font-family: 'Exo 2', sans-serif;
+        }
+
+        .verifier-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem 1rem;
+        }
+
+        .verifier-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .verifier-header h1 {
+            font-size: 2rem;
+            color: var(--text-light);
+            margin-bottom: 0.5rem;
+            font-weight: 700;
+        }
+
+        .verifier-header p {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+        }
+
+        .search-section {
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
+            margin-bottom: 2rem;
+            border: 1px solid var(--border-color);
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: var(--text-light);
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            font-size: 1rem;
+            background: var(--bg-dark);
+            color: var(--text-light);
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            transition: border-color 0.3s;
+            font-family: 'IBM Plex Sans', sans-serif;
+        }
+
+        .input-group input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+
+        .button-group {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 0.75rem 1.5rem;
+            font-size: 1rem;
+            font-weight: 500;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: 'IBM Plex Sans', sans-serif;
+        }
+
+        .btn-primary {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--secondary-color);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.5);
+        }
+
+        .btn-secondary {
+            background: var(--bg-dark);
+            color: var(--text-light);
+            border: 2px solid var(--border-color);
+        }
+
+        .btn-secondary:hover {
+            background: var(--bg-darker);
+            border-color: var(--primary-color);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .progress-bar {
+            display: none;
+            height: 4px;
+            background: var(--bg-dark);
+            border-radius: 2px;
+            overflow: hidden;
+            margin-top: 1rem;
+        }
+
+        .progress-bar.active {
+            display: block;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+            width: 0%;
+            transition: width 0.5s ease;
+            animation: shimmer 1.5s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(400%); }
+        }
+
+        .results-section {
+            display: none;
+        }
+
+        .results-section.active {
+            display: block;
+        }
+
+        .step-card {
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
+            border: 1px solid var(--border-color);
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.5s ease;
+        }
+
+        .step-card.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .step-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .step-number {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.2rem;
+            font-family: 'Exo 2', sans-serif;
+        }
+
+        .step-title {
+            flex: 1;
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: var(--text-light);
+            font-family: 'Exo 2', sans-serif;
+        }
+
+        .step-content {
+            margin-left: 56px;
+            color: var(--text-muted);
+        }
+
+        .step-content p {
+            font-family: 'IBM Plex Sans', sans-serif;
+        }
+
+        .info-box {
+            background: var(--bg-dark);
+            border-left: 4px solid var(--primary-color);
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 4px;
+        }
+
+        .info-box h3 {
+            font-family: 'Exo 2', sans-serif;
+            color: var(--text-light);
+        }
+
+        .info-box p {
+            font-family: 'IBM Plex Sans', sans-serif;
+            color: var(--text-muted);
+        }
+
+        .code-box {
+            background: var(--bg-darker);
+            color: #e2e8f0;
+            padding: 1rem;
+            border-radius: 8px;
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 0.9rem;
+            overflow-x: auto;
+            margin: 1rem 0;
+            border: 1px solid var(--border-color);
+        }
+
+        .code-box.animated {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .code-box.animated::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            animation: scan 2s ease-in-out;
+        }
+
+        @keyframes scan {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
+
+        .hash-visual {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+
+        .hash-input, .hash-output {
+            flex: 1;
+            padding: 1rem;
+            background: var(--bg-dark);
+            border-radius: 8px;
+            word-break: break-all;
+            border: 1px solid var(--border-color);
+        }
+
+        .hash-input strong, .hash-output strong {
+            color: var(--text-light);
+            font-family: 'IBM Plex Sans', sans-serif;
+        }
+
+        .hash-arrow {
+            font-size: 2rem;
+            color: var(--primary-color);
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.5; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.2); }
+        }
+
+        .ranking-visual {
+            position: relative;
+            padding: 2rem 0;
+        }
+
+        .ranking-item {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem;
+            margin: 0.5rem 0;
+            background: var(--bg-dark);
+            border-radius: 8px;
+            transition: all 0.3s;
+            border: 1px solid var(--border-color);
+        }
+
+        .ranking-item.highlight {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(139, 92, 246, 0.2));
+            border: 2px solid var(--primary-color);
+            transform: scale(1.05);
+        }
+
+        .rank-number {
+            width: 40px;
+            font-weight: bold;
+            color: var(--primary-color);
+            font-family: 'Exo 2', sans-serif;
+        }
+
+        .entry-code {
+            flex: 1;
+            font-family: monospace;
+            color: var(--text-light);
+        }
+
+        .score-badge {
+            background: var(--primary-color);
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 999px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            font-family: 'IBM Plex Sans', sans-serif;
+        }
+
+        .error-message {
+            background: var(--error-color);
+            color: white;
+            padding: 1rem;
+            border-radius: 8px;
+            margin: 1rem 0;
+        }
+
+        .error-message strong, .error-message p {
+            font-family: 'IBM Plex Sans', sans-serif;
+        }
+
+        .success-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: var(--success-color);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 999px;
+            font-weight: 500;
+            font-family: 'IBM Plex Sans', sans-serif;
+        }
+
+        .link-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--primary-color);
+            text-decoration: none;
+            font-weight: 500;
+            transition: gap 0.3s;
+            font-family: 'IBM Plex Sans', sans-serif;
+        }
+
+        .link-button:hover {
+            gap: 0.75rem;
+            color: var(--secondary-color);
+        }
+
+        /* Loading spinner */
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Responsive */
+        @media (max-width: 640px) {
+            .verifier-header h1 {
+                font-size: 1.5rem;
+            }
+            
+            .button-group {
+                flex-direction: column;
+            }
+            
+            .hash-visual {
+                flex-direction: column;
+            }
+            
+            .hash-arrow {
+                transform: rotate(90deg);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="verifier-container">
+        <div class="verifier-header">
+            <h1>🔍 Verify Your Entry</h1>
+            <p>See exactly how your entry was scored and ranked</p>
+        </div>
+
+        <div class="search-section">
+            <div class="input-group">
+                <label for="entryCode">Enter Your Entry Code</label>
+                <input 
+                    type="text" 
+                    id="entryCode" 
+                    placeholder="e.g., VP-2025-001"
+                    autocomplete="off"
+                />
+            </div>
+            
+            <div class="button-group">
+                <button class="btn btn-primary" id="verifyBtn">
+                    Verify Entry
+                </button>
+                <button class="btn btn-secondary" id="demoBtn">
+                    Try Demo
+                </button>
+            </div>
+            
+            <div class="progress-bar" id="progressBar">
+                <div class="progress-fill"></div>
+            </div>
+        </div>
+
+        <div class="results-section" id="resultsSection">
+            <!-- Step 1: Draw Discovery -->
+            <div class="step-card" id="step1">
+                <div class="step-header">
+                    <div class="step-number">1</div>
+                    <div class="step-title">Finding Your Draw</div>
+                </div>
+                <div class="step-content">
+                    <p>Searching through all past draws to find your entry...</p>
+                    <div class="info-box" id="drawInfo" style="display:none;">
+                        <!-- Draw info will be populated here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 2: Randomness Verification -->
+            <div class="step-card" id="step2">
+                <div class="step-header">
+                    <div class="step-number">2</div>
+                    <div class="step-title">Verifying Randomness</div>
+                </div>
+                <div class="step-content">
+                    <p>Every draw uses public randomness from drand (Distributed Randomness Beacon). This ensures nobody can predict or manipulate the results.</p>
+                    <div id="randomnessContent">
+                        <!-- Randomness verification will be shown here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 3: Seed Generation -->
+            <div class="step-card" id="step3">
+                <div class="step-header">
+                    <div class="step-number">3</div>
+                    <div class="step-title">Generating Draw Seed</div>
+                </div>
+                <div class="step-content">
+                    <p>The randomness is hashed using SHA-256 to create a unique "seed" for this draw. This seed is the same for everyone.</p>
+                    <div id="seedContent">
+                        <!-- Seed visualization will be shown here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 4: Your Score Calculation -->
+            <div class="step-card" id="step4">
+                <div class="step-header">
+                    <div class="step-number">4</div>
+                    <div class="step-title">Calculating Your Score</div>
+                </div>
+                <div class="step-content">
+                    <p>Your entry code is combined with the seed and hashed to create your unique score. Higher score = better ranking!</p>
+                    <div id="scoreContent">
+                        <!-- Score calculation will be shown here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 5: Final Ranking -->
+            <div class="step-card" id="step5">
+                <div class="step-header">
+                    <div class="step-number">5</div>
+                    <div class="step-title">Your Final Ranking</div>
+                </div>
+                <div class="step-content">
+                    <p>Here's where you ranked among all qualified entries in this draw:</p>
+                    <div id="rankingContent">
+                        <!-- Ranking visualization will be shown here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuration - TODO: Update with your actual GitHub repo details
+        const CONFIG = {
+            GITHUB_OWNER: 'vaultplay-dev',
+            GITHUB_REPO: 'vaultplay-draw-history',
+            DRAND_API: 'https://api.drand.sh/public',
+            DEMO_ENTRY_CODE: 'VP-2025-001' // TODO: Replace with actual demo entry
+        };
+
+        // State management
+        let currentAuditBundle = null;
+        let currentEntry = null;
+
+        // DOM elements
+        const entryCodeInput = document.getElementById('entryCode');
+        const verifyBtn = document.getElementById('verifyBtn');
+        const demoBtn = document.getElementById('demoBtn');
+        const progressBar = document.getElementById('progressBar');
+        const resultsSection = document.getElementById('resultsSection');
+
+        // Event listeners
+        verifyBtn.addEventListener('click', handleVerify);
+        demoBtn.addEventListener('click', handleDemo);
+        entryCodeInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') handleVerify();
+        });
+
+        // Main verification handler
+        async function handleVerify() {
+            const entryCode = entryCodeInput.value.trim();
+            
+            if (!entryCode) {
+                alert('Please enter an entry code');
+                return;
+            }
+
+            // Reset UI
+            resetResults();
+            showProgress(true);
+            verifyBtn.disabled = true;
+            verifyBtn.innerHTML = '<span class="spinner"></span> Verifying...';
+
+            try {
+                // Step 1: Find draw
+                await findDraw(entryCode);
+                await sleep(500);
+
+                // Step 2: Verify randomness
+                await verifyRandomness();
+                await sleep(500);
+
+                // Step 3: Show seed generation
+                await showSeedGeneration();
+                await sleep(500);
+
+                // Step 4: Calculate user's score
+                await calculateUserScore(entryCode);
+                await sleep(500);
+
+                // Step 5: Show ranking
+                await showRanking(entryCode);
+
+            } catch (error) {
+                showError(error.message);
+            } finally {
+                showProgress(false);
+                verifyBtn.disabled = false;
+                verifyBtn.textContent = 'Verify Entry';
+            }
+        }
+
+        // Demo handler
+        function handleDemo() {
+            entryCodeInput.value = CONFIG.DEMO_ENTRY_CODE;
+            handleVerify();
+        }
+
+        // Step 1: Find draw containing the entry
+        async function findDraw(entryCode) {
+            showStep(1);
+            
+            // TODO: Implement GitHub API search through audit bundles
+            // For now, using placeholder logic
+            
+            // Search through GitHub repo structure
+            // /live/YYYY-MM/competition-slug-YYYY-MM-DD-HHMM/draw.json
+            
+            const drawInfo = document.getElementById('drawInfo');
+            drawInfo.style.display = 'block';
+            drawInfo.innerHTML = `
+                <div class="success-badge">
+                    ✓ Draw Found
+                </div>
+                <h3 style="margin: 1rem 0 0.5rem 0;">October 2025 Prize Draw</h3>
+                <p><strong>Draw Date:</strong> October 27, 2025 at 21:00 UTC</p>
+                <p><strong>Competition ID:</strong> COMP-2025-001</p>
+                <p><strong>Mode:</strong> Live</p>
+                <p><strong>Total Entries:</strong> 1,247</p>
+                <a href="#" class="link-button" target="_blank">
+                    View Full Audit Bundle →
+                </a>
+            `;
+
+            // TODO: Fetch actual audit bundle from GitHub
+            // currentAuditBundle = await fetchAuditBundle(drawPath);
+        }
+
+        // Step 2: Verify randomness from drand
+        async function verifyRandomness() {
+            showStep(2);
+            
+            const randomnessContent = document.getElementById('randomnessContent');
+            
+            // Show API call animation
+            randomnessContent.innerHTML = `
+                <div class="info-box">
+                    <p><strong>📡 Fetching from drand API...</strong></p>
+                    <code>GET ${CONFIG.DRAND_API}/5475483</code>
+                </div>
+            `;
+
+            await sleep(1000);
+
+            // TODO: Make actual drand API call
+            // const drandResponse = await fetch(`${CONFIG.DRAND_API}/${round}`);
+            
+            randomnessContent.innerHTML = `
+                <div class="info-box">
+                    <p><strong>✓ Randomness Verified</strong></p>
+                    <p><strong>Round:</strong> 5,475,483</p>
+                    <p><strong>Timestamp:</strong> 2025-10-27T20:55:00Z</p>
+                </div>
+                <div class="code-box animated">
+                    dbd8372fa098b50dc58a4827e6f19ef08f5ceab89effaacf2d670e14594ba57f
+                </div>
+                <a href="${CONFIG.DRAND_API}/5475483" class="link-button" target="_blank">
+                    Verify on drand.love →
+                </a>
+            `;
+        }
+
+        // Step 3: Show seed generation
+        async function showSeedGeneration() {
+            showStep(3);
+            
+            const seedContent = document.getElementById('seedContent');
+            
+            seedContent.innerHTML = `
+                <div class="hash-visual">
+                    <div class="hash-input">
+                        <strong>Randomness:</strong><br>
+                        <code>dbd8372f...</code>
+                    </div>
+                    <div class="hash-arrow">→</div>
+                    <div class="hash-output">
+                        <strong>Seed (SHA-256):</strong><br>
+                        <code>a1b2c3d4...</code>
+                    </div>
+                </div>
+                <div class="info-box">
+                    <p><strong>How it works:</strong> We take the randomness and hash it with SHA-256. This creates a unique seed that's the same for everyone in this draw.</p>
+                </div>
+            `;
+
+            // TODO: Perform actual SHA-256 hash
+            // const seed = await sha256(randomness);
+        }
+
+        // Step 4: Calculate user's score
+        async function calculateUserScore(entryCode) {
+            showStep(4);
+            
+            const scoreContent = document.getElementById('scoreContent');
+            
+            scoreContent.innerHTML = `
+                <div class="hash-visual">
+                    <div class="hash-input">
+                        <strong>Seed + Your Entry:</strong><br>
+                        <code>a1b2c3d4...${entryCode}</code>
+                    </div>
+                    <div class="hash-arrow">→</div>
+                    <div class="hash-output">
+                        <strong>Your Score:</strong><br>
+                        <code>f3e4d5c6b7a89012...</code>
+                    </div>
+                </div>
+                <div class="info-box">
+                    <p><strong>Your numeric score:</strong> 110,463,041,867,699,312,402... (very large number!)</p>
+                    <p>Higher scores rank better. This score is unique to you and cannot be predicted before the draw.</p>
+                </div>
+            `;
+
+            // TODO: Perform actual hash calculation
+            // const score = await sha256(seed + entryCode);
+        }
+
+        // Step 5: Show ranking
+        async function showRanking(entryCode) {
+            showStep(5);
+            
+            const rankingContent = document.getElementById('rankingContent');
+            
+            // TODO: Get actual ranking from audit bundle
+            const userRank = 47;
+            const totalEntries = 1247;
+            
+            rankingContent.innerHTML = `
+                <div class="info-box">
+                    <h3 style="margin: 0 0 1rem 0;">You ranked #${userRank} out of ${totalEntries.toLocaleString()} entries!</h3>
+                    <p>That places you in the top ${((userRank/totalEntries)*100).toFixed(1)}% 🎉</p>
+                </div>
+                <div class="ranking-visual">
+                    ${generateRankingItems(userRank, entryCode)}
+                </div>
+                <div class="info-box">
+                    <p><strong>Want to see the full results?</strong></p>
+                    <a href="#" class="link-button" target="_blank">
+                        View Complete Rankings →
+                    </a>
+                </div>
+            `;
+        }
+
+        // Helper: Generate ranking items (show context around user)
+        function generateRankingItems(userRank, entryCode) {
+            let html = '';
+            const showAbove = 5;
+            const showBelow = 5;
+            
+            // TODO: Get actual entries from audit bundle
+            // For now, generate placeholder entries
+            
+            for (let i = Math.max(1, userRank - showAbove); i <= Math.min(userRank + showBelow, 100); i++) {
+                const isUser = i === userRank;
+                const code = isUser ? entryCode : `ENTRY-${String(i).padStart(4, '0')}`;
+                const score = isUser ? 'f3e4d5c6...' : `${(1000000 - i*1000).toString(16).substring(0, 8)}...`;
+                
+                html += `
+                    <div class="ranking-item ${isUser ? 'highlight' : ''}">
+                        <div class="rank-number">#${i}</div>
+                        <div class="entry-code">${code}</div>
+                        <div class="score-badge">${score}</div>
+                    </div>
+                `;
+            }
+            
+            return html;
+        }
+
+        // Utility functions
+        function showStep(stepNumber) {
+            const step = document.getElementById(`step${stepNumber}`);
+            resultsSection.classList.add('active');
+            
+            setTimeout(() => {
+                step.classList.add('visible');
+                step.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, 100);
+        }
+
+        function showProgress(show) {
+            if (show) {
+                progressBar.classList.add('active');
+                progressBar.querySelector('.progress-fill').style.width = '90%';
+            } else {
+                progressBar.querySelector('.progress-fill').style.width = '100%';
+                setTimeout(() => {
+                    progressBar.classList.remove('active');
+                    progressBar.querySelector('.progress-fill').style.width = '0%';
+                }, 500);
+            }
+        }
+
+        function resetResults() {
+            resultsSection.classList.remove('active');
+            document.querySelectorAll('.step-card').forEach(card => {
+                card.classList.remove('visible');
+            });
+        }
+
+        function showError(message) {
+            resultsSection.classList.add('active');
+            const step1 = document.getElementById('step1');
+            step1.classList.add('visible');
+            
+            const drawInfo = document.getElementById('drawInfo');
+            drawInfo.style.display = 'block';
+            drawInfo.innerHTML = `
+                <div class="error-message">
+                    <strong>❌ Entry Not Found</strong>
+                    <p>${message}</p>
+                    <p style="margin-top: 1rem;">Please check your entry code and try again.</p>
+                </div>
+            `;
+        }
+
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        // TODO: Implement actual SHA-256 hashing
+        async function sha256(input) {
+            const encoder = new TextEncoder();
+            const data = encoder.encode(input);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        }
+
+        // TODO: Implement GitHub API search
+        async function searchGitHubForEntry(entryCode) {
+            // Search through /live/ folders for audit bundles
+            // Parse each bundle to find matching entry code
+            // Return: { auditBundle, filePath, drawMetadata }
+        }
+
+        // TODO: Implement audit bundle fetcher
+        async function fetchAuditBundle(filePath) {
+            const url = `https://raw.githubusercontent.com/${CONFIG.GITHUB_OWNER}/${CONFIG.GITHUB_REPO}/main/${filePath}`;
+            const response = await fetch(url);
+            if (!response.ok) throw new Error('Failed to fetch audit bundle');
+            return response.json();
+        }
+    </script>
+</body>
+</html>
