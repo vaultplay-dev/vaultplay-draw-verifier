@@ -1231,7 +1231,8 @@
                         <strong>Seed + Your Entry:</strong><br>
                         <code class="hash-tooltip">
                             ${seedShort}${entryCode}
-                            <span class="hash-tooltip-text">${seed}${entryCode}</span>
+                            <span class="hash-tooltip-text">${seed}
+${entryCode}</span>
                         </code>
                     </div>
                     <div class="hash-arrow">→</div>
@@ -1273,10 +1274,10 @@
             const auditBundleUrl = `https://github.com/${CONFIG.GITHUB_OWNER}/${CONFIG.GITHUB_REPO}/blob/main/${currentFilePath}`;
             
             rankingContent.innerHTML = `
+                <div class="success-badge" style="margin-bottom: 1rem;">
+                    ✓ Ranking Verified
+                </div>
                 <div class="info-box">
-                    <div class="success-badge" style="margin-bottom: 1rem;">
-                        ✓ Ranking Verified
-                    </div>
                     <h3 style="margin: 0 0 1rem 0;">You ranked #${userRank} out of ${totalEntries.toLocaleString()} entries!</h3>
                     <p>That places you in the top ${((userRank/totalEntries)*100).toFixed(1)}% 🎉</p>
                 </div>
