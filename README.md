@@ -59,6 +59,28 @@ Your Final Position ✓
 - **drand API** - Verifies randomness sources
 - **GitHub Pages** - Free, fast, and secure hosting
 
+## ⚙️ Configuration
+
+The verifier supports configurable settings in the `CONFIG` object within `src/index.html`:
+
+```javascript
+const CONFIG = {
+    GITHUB_OWNER: 'vaultplay-dev',
+    GITHUB_REPO: 'vaultplay-draw-history',
+    DRAND_API: 'https://api.drand.sh/public',
+    DEMO_ENTRY_CODE: 'VP-TRH1N-UKWFG-GMDK',
+    SEARCH_DIRECTORIES: ['live'] // Directories to search: ['live'], ['test'], or ['live', 'test']
+};
+```
+
+### Audit Bundle Structure Support
+
+The verifier automatically handles both old and new audit bundle structures:
+- **Old structure:** Uses `results.fullRanking` for entries and `draw` for metadata
+- **New structure:** Uses `entries.list` for entries and `execution` for metadata
+
+This ensures compatibility with all historical draws regardless of when they were generated.
+
 ## 📚 Related Repositories
 
 - **Draw Worker:** [vaultplay-draw-worker](https://github.com/vaultplay-dev/vaultplay-draw-worker) - The system that executes draws
