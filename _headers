@@ -1,0 +1,5 @@
+/*
+  X-Frame-Options: ALLOW-FROM https://www.vaultplay.co.uk
+  Content-Security-Policy: frame-ancestors 'self' https://*.vaultplay.co.uk https://vaultplay.co.uk https://*.webflow.io
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
