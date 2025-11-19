@@ -870,7 +870,8 @@
             GITHUB_OWNER: 'vaultplay-dev',
             GITHUB_REPO: 'vaultplay-draw-history',
             DRAND_API: 'https://api.drand.sh/public',
-            DEMO_ENTRY_CODE: 'VP-TRH1N-UKWFG-GMDK'
+            DEMO_ENTRY_CODE: 'VP-TRH1N-UKWFG-GMDK',
+            SEARCH_DIRECTORIES: ['live'] // Configurable: directories to search for draws (e.g., ['live'], ['test'], or ['live', 'test'])
         };
 
         // State management
@@ -1302,12 +1303,15 @@
                 
                 const data = await response.json();
                 
-                // Filter for draw.json files in both live and test directories
-                const drawFiles = data.tree.filter(item => 
-                    (item.path.startsWith('live/') || item.path.startsWith('test/')) && 
-                    item.path.endsWith('/draw.json') &&
-                    item.type === 'blob'
-                );
+                // Filter for draw.json files in configured directories
+                const drawFiles = data.tree.filter(item => {
+                    const matchesDirectory = CONFIG.SEARCH_DIRECTORIES.some(dir => 
+                        item.path.startsWith(dir + '/')
+                    );
+                    return matchesDirectory && 
+                           item.path.endsWith('/draw.json') &&
+                           item.type === 'blob';
+                });
                 
                 // Search through each draw file
                 for (const file of drawFiles) {
