@@ -416,6 +416,71 @@
             to { transform: rotate(360deg); }
         }
 
+        /* Hash Tooltip Styles */
+        .hash-tooltip {
+            position: relative;
+            cursor: pointer;
+            display: inline-block;
+        }
+
+        .hash-tooltip-text {
+            visibility: hidden;
+            opacity: 0;
+            position: absolute;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--bg-darker);
+            color: var(--text-light);
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            border: 1px solid var(--primary-color);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            min-width: 300px;
+            max-width: 90vw;
+            word-break: break-all;
+            font-size: 0.85rem;
+            font-family: 'Monaco', 'Courier New', monospace;
+            white-space: pre-wrap;
+            transition: opacity 0.3s, visibility 0.3s;
+            pointer-events: none;
+        }
+
+        .hash-tooltip-text::after {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            border: 6px solid transparent;
+            border-top-color: var(--primary-color);
+        }
+
+        .hash-tooltip:hover .hash-tooltip-text,
+        .hash-tooltip.active .hash-tooltip-text {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        /* Mobile: Show tooltip below for better positioning */
+        @media (max-width: 640px) {
+            .hash-tooltip-text {
+                bottom: auto;
+                top: 125%;
+                min-width: 250px;
+                font-size: 0.75rem;
+                padding: 0.65rem 0.85rem;
+            }
+
+            .hash-tooltip-text::after {
+                top: auto;
+                bottom: 100%;
+                border-top-color: transparent;
+                border-bottom-color: var(--primary-color);
+            }
+        }
+
         /* Responsive - Tablet and Mobile Optimizations */
         
         /* Tablet devices (portrait) */
@@ -1007,12 +1072,18 @@
                 <div class="hash-visual">
                     <div class="hash-input">
                         <strong>Randomness:</strong><br>
-                        <code>${randomnessShort}</code>
+                        <code class="hash-tooltip">
+                            ${randomnessShort}
+                            <span class="hash-tooltip-text">${randomness}</span>
+                        </code>
                     </div>
                     <div class="hash-arrow">→</div>
                     <div class="hash-output">
                         <strong>Seed (SHA-256):</strong><br>
-                        <code>${seedShort}</code>
+                        <code class="hash-tooltip">
+                            ${seedShort}
+                            <span class="hash-tooltip-text">${seed}</span>
+                        </code>
                     </div>
                 </div>
                 <div class="code-box">
@@ -1048,12 +1119,18 @@
                 <div class="hash-visual">
                     <div class="hash-input">
                         <strong>Seed + Your Entry:</strong><br>
-                        <code>${seedShort}${entryCode}</code>
+                        <code class="hash-tooltip">
+                            ${seedShort}${entryCode}
+                            <span class="hash-tooltip-text">${seed}${entryCode}</span>
+                        </code>
                     </div>
                     <div class="hash-arrow">→</div>
                     <div class="hash-output">
                         <strong>Your Score:</strong><br>
-                        <code>${scoreShort}</code>
+                        <code class="hash-tooltip">
+                            ${scoreShort}
+                            <span class="hash-tooltip-text">${scoreHash}</span>
+                        </code>
                     </div>
                 </div>
                 <div class="code-box">
@@ -1119,7 +1196,10 @@
                     <div class="ranking-item ${isUser ? 'highlight' : ''}">
                         <div class="rank-number">#${rank}</div>
                         <div class="entry-code">${entry.entryCode}</div>
-                        <div class="score-badge">${scoreShort}</div>
+                        <div class="score-badge hash-tooltip">
+                            ${scoreShort}
+                            <span class="hash-tooltip-text">${entry.score}</span>
+                        </div>
                     </div>
                 `;
             }
@@ -1251,6 +1331,44 @@
             if (!response.ok) throw new Error('Failed to fetch audit bundle');
             return response.json();
         }
+
+        // Handle tooltip interactions for touch devices
+        function initializeTooltips() {
+            let activeTooltip = null;
+
+            // Handle touch events for mobile devices
+            document.addEventListener('click', (event) => {
+                const tooltip = event.target.closest('.hash-tooltip');
+                
+                if (tooltip) {
+                    event.preventDefault();
+                    
+                    // Close previously active tooltip
+                    if (activeTooltip && activeTooltip !== tooltip) {
+                        activeTooltip.classList.remove('active');
+                    }
+                    
+                    // Toggle current tooltip
+                    tooltip.classList.toggle('active');
+                    activeTooltip = tooltip.classList.contains('active') ? tooltip : null;
+                } else if (activeTooltip) {
+                    // Close tooltip when clicking outside
+                    activeTooltip.classList.remove('active');
+                    activeTooltip = null;
+                }
+            });
+
+            // Close tooltip on escape key
+            document.addEventListener('keydown', (event) => {
+                if (event.key === 'Escape' && activeTooltip) {
+                    activeTooltip.classList.remove('active');
+                    activeTooltip = null;
+                }
+            });
+        }
+
+        // Initialize tooltips when page loads
+        initializeTooltips();
     </script>
 </body>
 </html>
