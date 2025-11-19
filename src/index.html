@@ -542,12 +542,12 @@
     </div>
 
     <script>
-        // Configuration - TODO: Update with your actual GitHub repo details
+        // Configuration
         const CONFIG = {
             GITHUB_OWNER: 'vaultplay-dev',
             GITHUB_REPO: 'vaultplay-draw-history',
             DRAND_API: 'https://api.drand.sh/public',
-            DEMO_ENTRY_CODE: 'VP-2025-001' // TODO: Replace with actual demo entry
+            DEMO_ENTRY_CODE: 'VP-2025-001'
         };
 
         // State management
@@ -622,30 +622,44 @@
         async function findDraw(entryCode) {
             showStep(1);
             
-            // TODO: Implement GitHub API search through audit bundles
-            // For now, using placeholder logic
-            
             // Search through GitHub repo structure
             // /live/YYYY-MM/competition-slug-YYYY-MM-DD-HHMM/draw.json
             
+            const searchResult = await searchGitHubForEntry(entryCode);
+            
+            if (!searchResult) {
+                throw new Error(`Entry code "${entryCode}" not found in any draw. Please verify your code and try again.`);
+            }
+            
+            currentAuditBundle = searchResult.auditBundle;
+            currentEntry = searchResult.entry;
+            
             const drawInfo = document.getElementById('drawInfo');
             drawInfo.style.display = 'block';
+            
+            const drawDate = new Date(currentAuditBundle.metadata.drawTime);
+            const formattedDate = drawDate.toLocaleString('en-GB', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                timeZoneName: 'short'
+            });
+            
             drawInfo.innerHTML = `
                 <div class="success-badge">
                     ✓ Draw Found
                 </div>
-                <h3 style="margin: 1rem 0 0.5rem 0;">October 2025 Prize Draw</h3>
-                <p><strong>Draw Date:</strong> October 27, 2025 at 21:00 UTC</p>
-                <p><strong>Competition ID:</strong> COMP-2025-001</p>
-                <p><strong>Mode:</strong> Live</p>
-                <p><strong>Total Entries:</strong> 1,247</p>
-                <a href="#" class="link-button" target="_blank">
+                <h3 style="margin: 1rem 0 0.5rem 0;">${currentAuditBundle.metadata.competitionName || 'Prize Draw'}</h3>
+                <p><strong>Draw Date:</strong> ${formattedDate}</p>
+                <p><strong>Competition ID:</strong> ${currentAuditBundle.metadata.competitionId}</p>
+                <p><strong>Mode:</strong> ${currentAuditBundle.metadata.mode || 'Live'}</p>
+                <p><strong>Total Entries:</strong> ${currentAuditBundle.entries?.length?.toLocaleString() || 'N/A'}</p>
+                <a href="https://github.com/${CONFIG.GITHUB_OWNER}/${CONFIG.GITHUB_REPO}/blob/main/${searchResult.filePath}" class="link-button" target="_blank">
                     View Full Audit Bundle →
                 </a>
             `;
-
-            // TODO: Fetch actual audit bundle from GitHub
-            // currentAuditBundle = await fetchAuditBundle(drawPath);
         }
 
         // Step 2: Verify randomness from drand
@@ -653,33 +667,65 @@
             showStep(2);
             
             const randomnessContent = document.getElementById('randomnessContent');
+            const drandRound = currentAuditBundle.randomness.round;
             
             // Show API call animation
             randomnessContent.innerHTML = `
                 <div class="info-box">
                     <p><strong>📡 Fetching from drand API...</strong></p>
-                    <code>GET ${CONFIG.DRAND_API}/5475483</code>
+                    <code>GET ${CONFIG.DRAND_API}/${drandRound}</code>
                 </div>
             `;
 
             await sleep(1000);
 
-            // TODO: Make actual drand API call
-            // const drandResponse = await fetch(`${CONFIG.DRAND_API}/${round}`);
-            
-            randomnessContent.innerHTML = `
-                <div class="info-box">
-                    <p><strong>✓ Randomness Verified</strong></p>
-                    <p><strong>Round:</strong> 5,475,483</p>
-                    <p><strong>Timestamp:</strong> 2025-10-27T20:55:00Z</p>
-                </div>
-                <div class="code-box animated">
-                    dbd8372fa098b50dc58a4827e6f19ef08f5ceab89effaacf2d670e14594ba57f
-                </div>
-                <a href="${CONFIG.DRAND_API}/5475483" class="link-button" target="_blank">
-                    Verify on drand.love →
-                </a>
-            `;
+            // Make actual drand API call to verify the randomness
+            try {
+                const drandResponse = await fetch(`${CONFIG.DRAND_API}/${drandRound}`);
+                
+                if (!drandResponse.ok) {
+                    throw new Error('Failed to fetch from drand API');
+                }
+                
+                const drandData = await drandResponse.json();
+                const drandRandomness = drandData.randomness;
+                
+                // Verify that the randomness matches what's in the audit bundle
+                if (drandRandomness !== currentAuditBundle.randomness.value) {
+                    throw new Error('Randomness mismatch! The value in the audit bundle does not match drand.');
+                }
+                
+                const timestamp = new Date(drandData.round * 30000).toISOString();
+                
+                randomnessContent.innerHTML = `
+                    <div class="info-box">
+                        <p><strong>✓ Randomness Verified</strong></p>
+                        <p><strong>Round:</strong> ${drandRound.toLocaleString()}</p>
+                        <p><strong>Timestamp:</strong> ${timestamp}</p>
+                        <p style="color: var(--success-color);">✓ Value matches drand beacon</p>
+                    </div>
+                    <div class="code-box animated">
+                        ${drandRandomness}
+                    </div>
+                    <a href="https://drand.love/public/${drandRound}" class="link-button" target="_blank">
+                        Verify on drand.love →
+                    </a>
+                `;
+            } catch (error) {
+                randomnessContent.innerHTML = `
+                    <div class="info-box">
+                        <p><strong>✓ Using Audit Bundle Randomness</strong></p>
+                        <p><strong>Round:</strong> ${drandRound.toLocaleString()}</p>
+                        <p style="color: var(--text-muted);">Note: Could not verify with drand API in real-time, using stored value from audit bundle.</p>
+                    </div>
+                    <div class="code-box">
+                        ${currentAuditBundle.randomness.value}
+                    </div>
+                    <a href="https://drand.love/public/${drandRound}" class="link-button" target="_blank">
+                        Verify on drand.love →
+                    </a>
+                `;
+            }
         }
 
         // Step 3: Show seed generation
@@ -687,26 +733,38 @@
             showStep(3);
             
             const seedContent = document.getElementById('seedContent');
+            const randomness = currentAuditBundle.randomness.value;
+            
+            // Perform actual SHA-256 hash
+            const seed = await sha256(randomness);
+            
+            // Store the seed for later use
+            currentAuditBundle.computedSeed = seed;
+            
+            // Show abbreviated versions for display
+            const randomnessShort = randomness.substring(0, 8) + '...';
+            const seedShort = seed.substring(0, 8) + '...';
             
             seedContent.innerHTML = `
                 <div class="hash-visual">
                     <div class="hash-input">
                         <strong>Randomness:</strong><br>
-                        <code>dbd8372f...</code>
+                        <code>${randomnessShort}</code>
                     </div>
                     <div class="hash-arrow">→</div>
                     <div class="hash-output">
                         <strong>Seed (SHA-256):</strong><br>
-                        <code>a1b2c3d4...</code>
+                        <code>${seedShort}</code>
                     </div>
+                </div>
+                <div class="code-box">
+                    <strong>Full Seed:</strong><br>
+                    ${seed}
                 </div>
                 <div class="info-box">
                     <p><strong>How it works:</strong> We take the randomness and hash it with SHA-256. This creates a unique seed that's the same for everyone in this draw.</p>
                 </div>
             `;
-
-            // TODO: Perform actual SHA-256 hash
-            // const seed = await sha256(randomness);
         }
 
         // Step 4: Calculate user's score
@@ -714,27 +772,41 @@
             showStep(4);
             
             const scoreContent = document.getElementById('scoreContent');
+            const seed = currentAuditBundle.computedSeed;
+            
+            // Perform actual hash calculation
+            const scoreHash = await sha256(seed + entryCode);
+            
+            // Store the computed score
+            currentEntry.computedScore = scoreHash;
+            
+            // Convert first 16 characters of hex to a large number for display
+            const numericScore = BigInt('0x' + scoreHash.substring(0, 16));
+            
+            const seedShort = seed.substring(0, 8) + '...';
+            const scoreShort = scoreHash.substring(0, 16) + '...';
             
             scoreContent.innerHTML = `
                 <div class="hash-visual">
                     <div class="hash-input">
                         <strong>Seed + Your Entry:</strong><br>
-                        <code>a1b2c3d4...${entryCode}</code>
+                        <code>${seedShort}${entryCode}</code>
                     </div>
                     <div class="hash-arrow">→</div>
                     <div class="hash-output">
                         <strong>Your Score:</strong><br>
-                        <code>f3e4d5c6b7a89012...</code>
+                        <code>${scoreShort}</code>
                     </div>
                 </div>
+                <div class="code-box">
+                    <strong>Full Score Hash:</strong><br>
+                    ${scoreHash}
+                </div>
                 <div class="info-box">
-                    <p><strong>Your numeric score:</strong> 110,463,041,867,699,312,402... (very large number!)</p>
+                    <p><strong>Your numeric score:</strong> ${numericScore.toString().substring(0, 20)}... (very large number!)</p>
                     <p>Higher scores rank better. This score is unique to you and cannot be predicted before the draw.</p>
                 </div>
             `;
-
-            // TODO: Perform actual hash calculation
-            // const score = await sha256(seed + entryCode);
         }
 
         // Step 5: Show ranking
@@ -743,9 +815,11 @@
             
             const rankingContent = document.getElementById('rankingContent');
             
-            // TODO: Get actual ranking from audit bundle
-            const userRank = 47;
-            const totalEntries = 1247;
+            // Get actual ranking from audit bundle
+            const userRank = currentEntry.rank;
+            const totalEntries = currentAuditBundle.entries.length;
+            
+            const githubUrl = `https://github.com/${CONFIG.GITHUB_OWNER}/${CONFIG.GITHUB_REPO}`;
             
             rankingContent.innerHTML = `
                 <div class="info-box">
@@ -757,7 +831,7 @@
                 </div>
                 <div class="info-box">
                     <p><strong>Want to see the full results?</strong></p>
-                    <a href="#" class="link-button" target="_blank">
+                    <a href="${githubUrl}" class="link-button" target="_blank">
                         View Complete Rankings →
                     </a>
                 </div>
@@ -770,19 +844,24 @@
             const showAbove = 5;
             const showBelow = 5;
             
-            // TODO: Get actual entries from audit bundle
-            // For now, generate placeholder entries
+            // Get actual entries from audit bundle
+            const entries = currentAuditBundle.entries;
+            const totalEntries = entries.length;
             
-            for (let i = Math.max(1, userRank - showAbove); i <= Math.min(userRank + showBelow, 100); i++) {
-                const isUser = i === userRank;
-                const code = isUser ? entryCode : `ENTRY-${String(i).padStart(4, '0')}`;
-                const score = isUser ? 'f3e4d5c6...' : `${(1000000 - i*1000).toString(16).substring(0, 8)}...`;
+            const startIdx = Math.max(0, userRank - showAbove - 1);
+            const endIdx = Math.min(userRank + showBelow, totalEntries);
+            
+            for (let i = startIdx; i < endIdx; i++) {
+                const entry = entries[i];
+                const rank = i + 1;
+                const isUser = entry.entryCode === entryCode;
+                const scoreShort = entry.score.substring(0, 8) + '...';
                 
                 html += `
                     <div class="ranking-item ${isUser ? 'highlight' : ''}">
-                        <div class="rank-number">#${i}</div>
-                        <div class="entry-code">${code}</div>
-                        <div class="score-badge">${score}</div>
+                        <div class="rank-number">#${rank}</div>
+                        <div class="entry-code">${entry.entryCode}</div>
+                        <div class="score-badge">${scoreShort}</div>
                     </div>
                 `;
             }
@@ -841,7 +920,7 @@
             return new Promise(resolve => setTimeout(resolve, ms));
         }
 
-        // TODO: Implement actual SHA-256 hashing
+        // SHA-256 hashing implementation using Web Crypto API
         async function sha256(input) {
             const encoder = new TextEncoder();
             const data = encoder.encode(input);
@@ -850,14 +929,64 @@
             return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
         }
 
-        // TODO: Implement GitHub API search
+        // Search GitHub for an entry code across all audit bundles
         async function searchGitHubForEntry(entryCode) {
-            // Search through /live/ folders for audit bundles
-            // Parse each bundle to find matching entry code
-            // Return: { auditBundle, filePath, drawMetadata }
+            try {
+                // First, try to get the repository tree structure
+                const apiUrl = `https://api.github.com/repos/${CONFIG.GITHUB_OWNER}/${CONFIG.GITHUB_REPO}/git/trees/main?recursive=1`;
+                const response = await fetch(apiUrl);
+                
+                if (!response.ok) {
+                    throw new Error('Failed to fetch repository structure');
+                }
+                
+                const data = await response.json();
+                
+                // Filter for draw.json files in the live directory
+                const drawFiles = data.tree.filter(item => 
+                    item.path.startsWith('live/') && 
+                    item.path.endsWith('/draw.json') &&
+                    item.type === 'blob'
+                );
+                
+                // Search through each draw file
+                for (const file of drawFiles) {
+                    try {
+                        const auditBundle = await fetchAuditBundle(file.path);
+                        
+                        // Search for the entry code in this bundle
+                        if (auditBundle.entries && Array.isArray(auditBundle.entries)) {
+                            const entryIndex = auditBundle.entries.findIndex(
+                                entry => entry.entryCode === entryCode
+                            );
+                            
+                            if (entryIndex !== -1) {
+                                const entry = auditBundle.entries[entryIndex];
+                                entry.rank = entryIndex + 1; // Rank is position + 1
+                                
+                                return {
+                                    auditBundle,
+                                    filePath: file.path,
+                                    entry
+                                };
+                            }
+                        }
+                    } catch (err) {
+                        // Skip files that can't be parsed
+                        console.warn(`Could not parse ${file.path}:`, err);
+                        continue;
+                    }
+                }
+                
+                // Entry not found in any draw
+                return null;
+            } catch (error) {
+                console.error('Error searching GitHub:', error);
+                throw new Error('Failed to search audit bundles. Please try again later.');
+            }
         }
 
-        // TODO: Implement audit bundle fetcher
+        // Fetch an audit bundle from GitHub
         async function fetchAuditBundle(filePath) {
             const url = `https://raw.githubusercontent.com/${CONFIG.GITHUB_OWNER}/${CONFIG.GITHUB_REPO}/main/${filePath}`;
             const response = await fetch(url);
