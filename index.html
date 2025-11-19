@@ -1163,6 +1163,9 @@
             const seedShort = seed.substring(0, 8) + '...';
             
             seedContent.innerHTML = `
+                <div class="success-badge" style="margin-bottom: 1rem;">
+                    ✓ Seed Verified
+                </div>
                 <div class="hash-visual">
                     <div class="hash-input">
                         <strong>Randomness:</strong><br>
@@ -1185,7 +1188,6 @@
                     ${seed}
                 </div>
                 <div class="info-box">
-                    ${seedMatches ? '<div class="success-badge" style="margin-bottom: 1rem;">✓ Seed matches audit bundle</div>' : ''}
                     <p><strong>How it works:</strong> We take the randomness and hash it with SHA-256. This creates a unique seed that's the same for everyone in this draw.</p>
                 </div>
             `;
@@ -1221,12 +1223,16 @@
             const scoreShort = scoreHash.substring(0, 16) + '...';
             
             scoreContent.innerHTML = `
+                <div class="success-badge" style="margin-bottom: 1rem;">
+                    ✓ Score Verified
+                </div>
                 <div class="hash-visual">
                     <div class="hash-input">
                         <strong>Seed + Your Entry:</strong><br>
                         <code class="hash-tooltip">
                             ${seedShort}${entryCode}
-                            <span class="hash-tooltip-text">${seed}${entryCode}</span>
+                            <span class="hash-tooltip-text">${seed}
+${entryCode}</span>
                         </code>
                     </div>
                     <div class="hash-arrow">→</div>
@@ -1243,7 +1249,6 @@
                     ${scoreHash}
                 </div>
                 <div class="info-box">
-                    ${scoreMatches ? '<div class="success-badge" style="margin-bottom: 1rem;">✓ Score matches audit bundle</div>' : ''}
                     <p><strong>Your numeric score:</strong> ${numericScore.toString().substring(0, 20)}... (very large number!)</p>
                     <p>Higher scores rank better. This score is unique to you and cannot be predicted before the draw.</p>
                 </div>
@@ -1269,8 +1274,10 @@
             const auditBundleUrl = `https://github.com/${CONFIG.GITHUB_OWNER}/${CONFIG.GITHUB_REPO}/blob/main/${currentFilePath}`;
             
             rankingContent.innerHTML = `
+                <div class="success-badge" style="margin-bottom: 1rem;">
+                    ✓ Ranking Verified
+                </div>
                 <div class="info-box">
-                    ${rankMatches ? '<div class="success-badge" style="margin-bottom: 1rem;">✓ Rank matches audit bundle</div>' : ''}
                     <h3 style="margin: 0 0 1rem 0;">You ranked #${userRank} out of ${totalEntries.toLocaleString()} entries!</h3>
                     <p>That places you in the top ${((userRank/totalEntries)*100).toFixed(1)}% 🎉</p>
                 </div>
