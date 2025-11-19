@@ -401,6 +401,39 @@
             color: var(--secondary-color);
         }
 
+        .continue-btn-container {
+            display: flex;
+            justify-content: center;
+            margin-top: 1.5rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .btn-continue {
+            padding: 0.75rem 2rem;
+            font-size: 1rem;
+            font-weight: 500;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: 'IBM Plex Sans', sans-serif;
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .btn-continue:hover {
+            background: var(--secondary-color);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.5);
+        }
+
+        .btn-continue:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
         /* Loading spinner */
         .spinner {
             display: inline-block;
@@ -877,6 +910,9 @@
         // State management
         let currentAuditBundle = null;
         let currentEntry = null;
+        let currentFilePath = null;
+        let currentStep = 0;
+        let userEntryCode = '';
 
         // Helper function to normalize audit bundle structure
         // Supports both old structure (results.fullRanking) and new structure (entries.list)
@@ -921,6 +957,8 @@
                 return;
             }
 
+            userEntryCode = entryCode;
+
             // Reset UI
             resetResults();
             showProgress(true);
@@ -929,23 +967,9 @@
 
             try {
                 // Step 1: Find draw
+                currentStep = 1;
                 await findDraw(entryCode);
                 await sleep(500);
-
-                // Step 2: Verify randomness
-                await verifyRandomness();
-                await sleep(500);
-
-                // Step 3: Show seed generation
-                await showSeedGeneration();
-                await sleep(500);
-
-                // Step 4: Calculate user's score
-                await calculateUserScore(entryCode);
-                await sleep(500);
-
-                // Step 5: Show ranking
-                await showRanking(entryCode);
 
             } catch (error) {
                 showError(error.message);
@@ -953,6 +977,37 @@
                 showProgress(false);
                 verifyBtn.disabled = false;
                 verifyBtn.textContent = 'Verify Entry';
+            }
+        }
+
+        // Continue to next step
+        async function continueToNextStep() {
+            showProgress(true);
+            
+            try {
+                currentStep++;
+                
+                switch(currentStep) {
+                    case 2:
+                        await verifyRandomness();
+                        break;
+                    case 3:
+                        await showSeedGeneration();
+                        break;
+                    case 4:
+                        await calculateUserScore(userEntryCode);
+                        break;
+                    case 5:
+                        await showRanking(userEntryCode);
+                        break;
+                }
+                
+                await sleep(500);
+                
+            } catch (error) {
+                showError(error.message);
+            } finally {
+                showProgress(false);
             }
         }
 
@@ -977,6 +1032,7 @@
             
             currentAuditBundle = searchResult.auditBundle;
             currentEntry = searchResult.entry;
+            currentFilePath = searchResult.filePath;
             
             const drawInfo = document.getElementById('drawInfo');
             drawInfo.style.display = 'block';
@@ -1004,6 +1060,8 @@
                     View Full Audit Bundle →
                 </a>
             `;
+            
+            addContinueButton(1);
         }
 
         // Step 2: Verify randomness from drand
@@ -1039,37 +1097,42 @@
                     throw new Error('Randomness mismatch! The value in the audit bundle does not match drand.');
                 }
                 
-                const timestamp = new Date(drandData.round * 30000).toISOString();
+                const timestamp = currentAuditBundle.randomness.timestamp || new Date(drandData.round * 30000).toISOString();
                 
                 randomnessContent.innerHTML = `
                     <div class="info-box">
                         <p><strong>✓ Randomness Verified</strong></p>
-                        <p><strong>Round:</strong> ${drandRound.toLocaleString()}</p>
+                        <p><strong>Round:</strong> ${drandRound}</p>
                         <p><strong>Timestamp:</strong> ${timestamp}</p>
                         <p style="color: var(--success-color);">✓ Value matches drand beacon</p>
                     </div>
                     <div class="code-box animated">
                         ${drandRandomness}
                     </div>
-                    <a href="https://drand.love/public/${drandRound}" class="link-button" target="_blank">
+                    <a href="https://api.drand.sh/public/${drandRound}" class="link-button" target="_blank">
                         Verify on drand.love →
                     </a>
                 `;
             } catch (error) {
+                const timestamp = currentAuditBundle.randomness.timestamp || new Date(drandRound * 30000).toISOString();
+                
                 randomnessContent.innerHTML = `
                     <div class="info-box">
                         <p><strong>✓ Using Audit Bundle Randomness</strong></p>
-                        <p><strong>Round:</strong> ${drandRound.toLocaleString()}</p>
+                        <p><strong>Round:</strong> ${drandRound}</p>
+                        <p><strong>Timestamp:</strong> ${timestamp}</p>
                         <p style="color: var(--text-muted);">Note: Could not verify with drand API in real-time, using stored value from audit bundle.</p>
                     </div>
                     <div class="code-box">
                         ${currentAuditBundle.randomness.value}
                     </div>
-                    <a href="https://drand.love/public/${drandRound}" class="link-button" target="_blank">
+                    <a href="https://api.drand.sh/public/${drandRound}" class="link-button" target="_blank">
                         Verify on drand.love →
                     </a>
                 `;
             }
+            
+            addContinueButton(2);
         }
 
         // Step 3: Show seed generation
@@ -1115,6 +1178,8 @@
                     <p><strong>How it works:</strong> We take the randomness and hash it with SHA-256. This creates a unique seed that's the same for everyone in this draw.</p>
                 </div>
             `;
+            
+            addContinueButton(3);
         }
 
         // Step 4: Calculate user's score
@@ -1163,6 +1228,8 @@
                     <p>Higher scores rank better. This score is unique to you and cannot be predicted before the draw.</p>
                 </div>
             `;
+            
+            addContinueButton(4);
         }
 
         // Step 5: Show ranking
@@ -1175,7 +1242,7 @@
             const userRank = currentEntry.rank;
             const totalEntries = currentAuditBundle.entries.length;
             
-            const githubUrl = `https://github.com/${CONFIG.GITHUB_OWNER}/${CONFIG.GITHUB_REPO}`;
+            const auditBundleUrl = `https://github.com/${CONFIG.GITHUB_OWNER}/${CONFIG.GITHUB_REPO}/blob/main/${currentFilePath}`;
             
             rankingContent.innerHTML = `
                 <div class="info-box">
@@ -1187,7 +1254,7 @@
                 </div>
                 <div class="info-box">
                     <p><strong>Want to see the full results?</strong></p>
-                    <a href="${githubUrl}" class="link-button" target="_blank">
+                    <a href="${auditBundleUrl}" class="link-button" target="_blank">
                         View Complete Rankings →
                     </a>
                 </div>
@@ -1241,6 +1308,29 @@
             }, 100);
         }
 
+        function addContinueButton(stepNumber) {
+            const step = document.getElementById(`step${stepNumber}`);
+            const stepContent = step.querySelector('.step-content');
+            
+            // Remove any existing continue button
+            const existingBtn = stepContent.querySelector('.continue-btn-container');
+            if (existingBtn) {
+                existingBtn.remove();
+            }
+            
+            // Add continue button (not for step 5, the last step)
+            if (stepNumber < 5) {
+                const continueContainer = document.createElement('div');
+                continueContainer.className = 'continue-btn-container';
+                continueContainer.innerHTML = `
+                    <button class="btn-continue" onclick="continueToNextStep()">
+                        Continue to Step ${stepNumber + 1} →
+                    </button>
+                `;
+                stepContent.appendChild(continueContainer);
+            }
+        }
+
         function showProgress(show) {
             if (show) {
                 progressBar.classList.add('active');
@@ -1259,6 +1349,8 @@
             document.querySelectorAll('.step-card').forEach(card => {
                 card.classList.remove('visible');
             });
+            currentStep = 0;
+            userEntryCode = '';
         }
 
         function showError(message) {
