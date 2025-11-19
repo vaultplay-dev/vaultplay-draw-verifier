@@ -1207,6 +1207,9 @@
             const scoreContent = document.getElementById('scoreContent');
             const seed = currentAuditBundle.computedSeed;
             
+            // Read entry code directly from input field to ensure it's always available
+            const entryCodeValue = document.getElementById('entryCode').value;
+            
             // Perform actual hash calculation
             const scoreHash = await sha256(seed + entryCode);
             
@@ -1235,8 +1238,8 @@
                     <div class="hash-input">
                         <strong>Seed + Your Entry:</strong><br>
                         <code class="hash-tooltip">
-                            ${seedShort}${entryCode}
-                            <span class="hash-tooltip-text">${seed}${entryCode}</span>
+                            ${seedShort}${entryCodeValue}
+                            <span class="hash-tooltip-text">${seed}${entryCodeValue}</span>
                         </code>
                     </div>
                     <div class="hash-arrow">→</div>
