@@ -848,11 +848,6 @@
 </head>
 <body>
     <div class="verifier-container">
-        <div class="verifier-header">
-            <h1>🔍 Verify Your Entry</h1>
-            <p>See exactly how your entry was scored and ranked</p>
-        </div>
-
         <div class="search-section">
             <div class="input-group">
                 <label for="entryCode">Enter Your Entry Code</label>
@@ -1105,7 +1100,7 @@
                 <div class="success-badge" style="margin-top: 1rem; margin-bottom: 1rem;">
                     ✓ Draw Found
                 </div>
-                <div class="info-box">
+                <div>
                     <h3 style="margin: 0 0 0.5rem 0;">${currentAuditBundle.metadata.competitionName || 'Prize Draw'}</h3>
                     <p><strong>Draw Date:</strong> ${formattedDate}</p>
                     <p><strong>Competition ID:</strong> ${currentAuditBundle.metadata.competitionId}</p>
@@ -1366,7 +1361,8 @@
             for (let i = startIdx; i < endIdx; i++) {
                 const entry = entries[i];
                 const rank = i + 1;
-                const isUser = entry.entryCode.trim().toUpperCase() === entryCode.trim().toUpperCase();
+                // Use global userEntryCode variable directly to ensure correct comparison
+                const isUser = entry.entryCode.trim().toUpperCase() === userEntryCode.trim().toUpperCase();
                 // Support both scoreHex and score fields
                 const entryScore = entry.scoreHex || entry.score || '';
                 const scoreShort = entryScore.substring(0, 8) + '...';
