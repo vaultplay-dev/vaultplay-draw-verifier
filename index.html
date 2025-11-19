@@ -1100,11 +1100,13 @@
                 const timestamp = currentAuditBundle.randomness.timestamp || new Date(drandData.round * 30000).toISOString();
                 
                 randomnessContent.innerHTML = `
+                    <div class="success-badge" style="margin-bottom: 1rem;">
+                        ✓ Value matches drand beacon
+                    </div>
                     <div class="info-box">
                         <p><strong>✓ Randomness Verified</strong></p>
                         <p><strong>Round:</strong> ${drandRound}</p>
                         <p><strong>Timestamp:</strong> ${timestamp}</p>
-                        <p style="color: var(--success-color);">✓ Value matches drand beacon</p>
                     </div>
                     <div class="code-box animated">
                         ${drandRandomness}
@@ -1148,11 +1150,21 @@
             // Store the seed for later use
             currentAuditBundle.computedSeed = seed;
             
+            // Verify against audit bundle seed (support both seed and seedHash fields)
+            const auditBundleSeed = currentAuditBundle.seed || currentAuditBundle.seedHash;
+            const seedMatches = auditBundleSeed && seed === auditBundleSeed;
+            
             // Show abbreviated versions for display
             const randomnessShort = randomness.substring(0, 8) + '...';
             const seedShort = seed.substring(0, 8) + '...';
             
+            let verificationBadge = '';
+            if (seedMatches) {
+                verificationBadge = '<div class="success-badge" style="margin-bottom: 1rem;">✓ Seed matches audit bundle</div>';
+            }
+            
             seedContent.innerHTML = `
+                ${verificationBadge}
                 <div class="hash-visual">
                     <div class="hash-input">
                         <strong>Randomness:</strong><br>
@@ -1198,10 +1210,24 @@
             // Convert first 16 characters of hex to a large number for display
             const numericScore = BigInt('0x' + scoreHash.substring(0, 16));
             
+            // Verify against audit bundle (support both scoreHex and score fields)
+            const auditBundleScore = currentEntry.scoreHex || currentEntry.score;
+            const scoreMatches = auditBundleScore && scoreHash === auditBundleScore;
+            
+            // Also verify numeric score matches
+            const auditBundleNumeric = currentEntry.scoreNumeric ? BigInt(currentEntry.scoreNumeric) : null;
+            const numericMatches = auditBundleNumeric && numericScore === auditBundleNumeric;
+            
             const seedShort = seed.substring(0, 8) + '...';
             const scoreShort = scoreHash.substring(0, 16) + '...';
             
+            let verificationBadge = '';
+            if (scoreMatches) {
+                verificationBadge = '<div class="success-badge" style="margin-bottom: 1rem;">✓ Score matches audit bundle</div>';
+            }
+            
             scoreContent.innerHTML = `
+                ${verificationBadge}
                 <div class="hash-visual">
                     <div class="hash-input">
                         <strong>Seed + Your Entry:</strong><br>
@@ -1242,9 +1268,19 @@
             const userRank = currentEntry.rank;
             const totalEntries = currentAuditBundle.entries.length;
             
+            // Verify rank - check if the user is at the correct position in the entries array
+            const entryAtRankPosition = currentAuditBundle.entries[userRank - 1];
+            const rankMatches = entryAtRankPosition && entryAtRankPosition.entryCode === entryCode;
+            
+            let verificationBadge = '';
+            if (rankMatches) {
+                verificationBadge = '<div class="success-badge" style="margin-bottom: 1rem;">✓ Rank matches audit bundle</div>';
+            }
+            
             const auditBundleUrl = `https://github.com/${CONFIG.GITHUB_OWNER}/${CONFIG.GITHUB_REPO}/blob/main/${currentFilePath}`;
             
             rankingContent.innerHTML = `
+                ${verificationBadge}
                 <div class="info-box">
                     <h3 style="margin: 0 0 1rem 0;">You ranked #${userRank} out of ${totalEntries.toLocaleString()} entries!</h3>
                     <p>That places you in the top ${((userRank/totalEntries)*100).toFixed(1)}% 🎉</p>
@@ -1282,13 +1318,23 @@
                 const entryScore = entry.scoreHex || entry.score || '';
                 const scoreShort = entryScore.substring(0, 8) + '...';
                 
+                // Calculate numeric score from hex
+                const numericScore = BigInt('0x' + entryScore.substring(0, 16));
+                const numericShort = numericScore.toString().substring(0, 8) + '...';
+                
                 html += `
                     <div class="ranking-item ${isUser ? 'highlight' : ''}">
                         <div class="rank-number">#${rank}</div>
                         <div class="entry-code">${entry.entryCode}</div>
-                        <div class="score-badge hash-tooltip">
-                            ${scoreShort}
-                            <span class="hash-tooltip-text">${entryScore}</span>
+                        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                            <div class="score-badge hash-tooltip" style="background: var(--primary-color);">
+                                Hex: ${scoreShort}
+                                <span class="hash-tooltip-text">${entryScore}</span>
+                            </div>
+                            <div class="score-badge hash-tooltip" style="background: var(--secondary-color);">
+                                Num: ${numericShort}
+                                <span class="hash-tooltip-text">${numericScore.toString()}</span>
+                            </div>
                         </div>
                     </div>
                 `;
