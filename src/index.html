@@ -870,12 +870,32 @@
             GITHUB_OWNER: 'vaultplay-dev',
             GITHUB_REPO: 'vaultplay-draw-history',
             DRAND_API: 'https://api.drand.sh/public',
-            DEMO_ENTRY_CODE: 'VP-2025-001'
+            DEMO_ENTRY_CODE: 'VP-TRH1N-UKWFG-GMDK'
         };
 
         // State management
         let currentAuditBundle = null;
         let currentEntry = null;
+
+        // Helper function to normalize audit bundle structure
+        // Supports both old structure (results.fullRanking) and new structure (entries.list)
+        function normalizeAuditBundle(bundle) {
+            const normalized = { ...bundle };
+            
+            // Get entries from either old or new structure
+            normalized.entries = bundle.results?.fullRanking || bundle.entries?.list || bundle.entries || [];
+            
+            // Get metadata from either structure
+            normalized.metadata = {
+                competitionId: bundle.competition?.id,
+                competitionName: bundle.competition?.name,
+                mode: bundle.competition?.mode,
+                drawTime: bundle.draw?.timestamp || bundle.execution?.timestamp,
+                workerVersion: bundle.draw?.workerVersion || bundle.execution?.workerVersion
+            };
+            
+            return normalized;
+        }
 
         // DOM elements
         const entryCodeInput = document.getElementById('entryCode');
@@ -1190,7 +1210,9 @@
                 const entry = entries[i];
                 const rank = i + 1;
                 const isUser = entry.entryCode === entryCode;
-                const scoreShort = entry.score.substring(0, 8) + '...';
+                // Support both scoreHex and score fields
+                const entryScore = entry.scoreHex || entry.score || '';
+                const scoreShort = entryScore.substring(0, 8) + '...';
                 
                 html += `
                     <div class="ranking-item ${isUser ? 'highlight' : ''}">
@@ -1198,7 +1220,7 @@
                         <div class="entry-code">${entry.entryCode}</div>
                         <div class="score-badge hash-tooltip">
                             ${scoreShort}
-                            <span class="hash-tooltip-text">${entry.score}</span>
+                            <span class="hash-tooltip-text">${entryScore}</span>
                         </div>
                     </div>
                 `;
@@ -1280,9 +1302,9 @@
                 
                 const data = await response.json();
                 
-                // Filter for draw.json files in the live directory
+                // Filter for draw.json files in both live and test directories
                 const drawFiles = data.tree.filter(item => 
-                    item.path.startsWith('live/') && 
+                    (item.path.startsWith('live/') || item.path.startsWith('test/')) && 
                     item.path.endsWith('/draw.json') &&
                     item.type === 'blob'
                 );
@@ -1290,18 +1312,16 @@
                 // Search through each draw file
                 for (const file of drawFiles) {
                     try {
-                        const auditBundle = await fetchAuditBundle(file.path);
+                        const rawBundle = await fetchAuditBundle(file.path);
+                        const auditBundle = normalizeAuditBundle(rawBundle);
                         
                         // Search for the entry code in this bundle
                         if (auditBundle.entries && Array.isArray(auditBundle.entries)) {
-                            const entryIndex = auditBundle.entries.findIndex(
+                            const entry = auditBundle.entries.find(
                                 entry => entry.entryCode === entryCode
                             );
                             
-                            if (entryIndex !== -1) {
-                                const entry = auditBundle.entries[entryIndex];
-                                entry.rank = entryIndex + 1; // Rank is position + 1
-                                
+                            if (entry) {
                                 return {
                                     auditBundle,
                                     filePath: file.path,
