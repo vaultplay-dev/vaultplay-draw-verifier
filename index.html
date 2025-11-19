@@ -1585,5 +1585,29 @@
         // Initialize tooltips when page loads
         initializeTooltips();
     </script>
+     <script>
+        // Send height to parent window for iframe auto-sizing
+        (function() {
+          function sendHeight() {
+            const height = document.documentElement.scrollHeight;
+            window.parent.postMessage({
+              type: 'resize',
+              height: height
+            }, '*'); // Use '*' to allow any parent domain
+          }
+          
+          window.addEventListener('load', sendHeight);
+          
+          const observer = new MutationObserver(sendHeight);
+          observer.observe(document.body, {
+            childList: true,
+            subtree: true,
+            attributes: true
+          });
+          
+          setInterval(sendHeight, 500);
+          window.addEventListener('resize', sendHeight);
+        })();
+    </script>
 </body>
 </html>
