@@ -53,7 +53,7 @@ Your Final Position ✓
 
 ## 🛠️ Technical Stack
 
-- **Pure HTML/CSS/JavaScript** - No frameworks, no build process
+- **Pure HTML/CSS/JavaScript** - No frameworks, no build process (single `index.html` file)
 - **Web Crypto API** - SHA-256 hashing in the browser
 - **GitHub API** - Fetches public audit bundles
 - **drand API** - Verifies randomness sources
