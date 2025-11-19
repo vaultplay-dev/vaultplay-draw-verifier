@@ -1052,17 +1052,19 @@
             });
             
             drawInfo.innerHTML = `
-                <div class="success-badge">
+                <div class="success-badge" style="margin-top: 1rem; margin-bottom: 1rem;">
                     ✓ Draw Found
                 </div>
-                <h3 style="margin: 1rem 0 0.5rem 0;">${currentAuditBundle.metadata.competitionName || 'Prize Draw'}</h3>
-                <p><strong>Draw Date:</strong> ${formattedDate}</p>
-                <p><strong>Competition ID:</strong> ${currentAuditBundle.metadata.competitionId}</p>
-                <p><strong>Mode:</strong> ${currentAuditBundle.metadata.mode || 'Live'}</p>
-                <p><strong>Total Entries:</strong> ${currentAuditBundle.entries?.length?.toLocaleString() || 'N/A'}</p>
-                <a href="https://github.com/${CONFIG.GITHUB_OWNER}/${CONFIG.GITHUB_REPO}/blob/main/${searchResult.filePath}" class="link-button" target="_blank">
-                    View Full Audit Bundle →
-                </a>
+                <div class="info-box">
+                    <h3 style="margin: 0 0 0.5rem 0;">${currentAuditBundle.metadata.competitionName || 'Prize Draw'}</h3>
+                    <p><strong>Draw Date:</strong> ${formattedDate}</p>
+                    <p><strong>Competition ID:</strong> ${currentAuditBundle.metadata.competitionId}</p>
+                    <p><strong>Mode:</strong> ${currentAuditBundle.metadata.mode || 'Live'}</p>
+                    <p><strong>Total Entries:</strong> ${currentAuditBundle.entries?.length?.toLocaleString() || 'N/A'}</p>
+                    <a href="https://github.com/${CONFIG.GITHUB_OWNER}/${CONFIG.GITHUB_REPO}/blob/main/${searchResult.filePath}" class="link-button" target="_blank">
+                        View Full Audit Bundle →
+                    </a>
+                </div>
             `;
             
             addContinueButton(1);
@@ -1104,11 +1106,11 @@
                 const timestamp = currentAuditBundle.randomness.timestamp || new Date(drandData.round * 30000).toISOString();
                 
                 randomnessContent.innerHTML = `
+                    <div class="success-badge" style="margin-top: 1rem; margin-bottom: 1rem;">
+                        ✓ Randomness Verified
+                    </div>
                     <div class="info-box">
-                        <div class="success-badge" style="margin-bottom: 1rem;">
-                            ✓ Value matches drand beacon
-                        </div>
-                        <p><strong>✓ Randomness Verified</strong></p>
+                        <p><strong>✓ Value matches drand beacon</strong></p>
                         <p><strong>Round:</strong> ${drandRound}</p>
                         <p><strong>Timestamp:</strong> ${timestamp}</p>
                     </div>
@@ -1123,6 +1125,9 @@
                 const timestamp = currentAuditBundle.randomness.timestamp || new Date(drandRound * 30000).toISOString();
                 
                 randomnessContent.innerHTML = `
+                    <div class="success-badge" style="margin-top: 1rem; margin-bottom: 1rem;">
+                        ✓ Randomness Verified
+                    </div>
                     <div class="info-box">
                         <p><strong>✓ Using Audit Bundle Randomness</strong></p>
                         <p><strong>Round:</strong> ${drandRound}</p>
@@ -1163,7 +1168,7 @@
             const seedShort = seed.substring(0, 8) + '...';
             
             seedContent.innerHTML = `
-                <div class="success-badge" style="margin-bottom: 1rem;">
+                <div class="success-badge" style="margin-top: 1rem; margin-bottom: 1rem;">
                     ✓ Seed Verified
                 </div>
                 <div class="hash-visual">
@@ -1223,7 +1228,7 @@
             const scoreShort = scoreHash.substring(0, 16) + '...';
             
             scoreContent.innerHTML = `
-                <div class="success-badge" style="margin-bottom: 1rem;">
+                <div class="success-badge" style="margin-top: 1rem; margin-bottom: 1rem;">
                     ✓ Score Verified
                 </div>
                 <div class="hash-visual">
@@ -1231,8 +1236,7 @@
                         <strong>Seed + Your Entry:</strong><br>
                         <code class="hash-tooltip">
                             ${seedShort}${entryCode}
-                            <span class="hash-tooltip-text">${seed}
-${entryCode}</span>
+                            <span class="hash-tooltip-text">${seed}${entryCode}</span>
                         </code>
                     </div>
                     <div class="hash-arrow">→</div>
@@ -1274,7 +1278,7 @@ ${entryCode}</span>
             const auditBundleUrl = `https://github.com/${CONFIG.GITHUB_OWNER}/${CONFIG.GITHUB_REPO}/blob/main/${currentFilePath}`;
             
             rankingContent.innerHTML = `
-                <div class="success-badge" style="margin-bottom: 1rem;">
+                <div class="success-badge" style="margin-top: 1rem; margin-bottom: 1rem;">
                     ✓ Ranking Verified
                 </div>
                 <div class="info-box">
