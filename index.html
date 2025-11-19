@@ -1006,10 +1006,12 @@
                 return;
             }
 
-            userEntryCode = entryCode;
-
             // Reset UI
             resetResults();
+            
+            // Set userEntryCode AFTER resetResults() to prevent it from being cleared
+            userEntryCode = entryCode;
+            
             showProgress(true);
             verifyBtn.disabled = true;
             verifyBtn.innerHTML = '<span class="spinner"></span> Verifying...';
