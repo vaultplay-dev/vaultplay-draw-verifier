@@ -1263,8 +1263,8 @@
             // Store the computed score
             currentEntry.computedScore = scoreHash;
             
-            // Convert first 16 characters of hex to a large number for display
-            const numericScore = BigInt('0x' + scoreHash.substring(0, 16));
+            // Convert full hex hash to a large number for display
+            const numericScore = BigInt('0x' + scoreHash);
             
             // Verify against audit bundle (support both scoreHex and score fields)
             const auditBundleScore = currentEntry.scoreHex || currentEntry.score;
@@ -1369,8 +1369,8 @@
                 const entryScore = entry.scoreHex || entry.score || '';
                 const scoreShort = entryScore.substring(0, 8) + '...';
                 
-                // Calculate numeric score from hex
-                const numericScore = BigInt('0x' + entryScore.substring(0, 16));
+                // Calculate numeric score from full hex
+                const numericScore = BigInt('0x' + entryScore);
                 const numericShort = numericScore.toString().substring(0, 8) + '...';
                 
                 html += `
